@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Gestion des Fromations{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Gestion des Fromations</h1>
+  <a href="{% url 'formation_create' %}" class="btn btn-primary">Ajouter une Formation</a>
+</div>
+<div class="card shadow-sm"><div class="card-body">
+<table class="table table-hover">
+  <thead><tr><th>Code</th><th>Nom</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for formation in object_list %}
+    <tr>
+      <td>{{ formation.code }}</td>
+      <td>{{ formation.nom }}</td>
+      <td>
+        <a href="{% url 'formation_update' formation.pk %}" class="btn btn-sm btn-warning">Modifier</a>
+        <a href="{% url 'formation_delete' formation.pk %}" class="btn btn-sm btn-danger">Supprimer</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

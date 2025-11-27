@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Supprimer Fromations{% endblock %}
+{% block content %}
+<h1>Supprimer Fromations</h1>
+<p>Êtes-vous sûr de vouloir supprimer : <strong>{{ formation.nom }}</strong> ?</p>
+<form method="POST">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Oui, supprimer</button>
+  <a href="{% url 'formation_list' %}" class="btn btn-secondary">Annuler</a>
+</form>
+{% endblock %}
