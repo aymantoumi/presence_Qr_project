@@ -1,22 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Gestion des Fromations{% endblock %}
+{% block title %}Gestion des Enseignants{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>Gestion des Fromations</h1>
-  <a href="{% url 'formation_create' %}" class="btn btn-primary">Ajouter une Formation</a>
+  <h1>Gestion des Enseignants</h1>
+  <a href="{% url 'enseignant_create' %}" class="btn btn-primary">Ajouter un Enseignant</a>
 </div>
+
 <div class="card shadow-sm"><div class="card-body">
 <table class="table table-hover">
-  <thead><tr><th>Code</th><th>Nom</th><th>Actions</th></tr></thead>
-  <tbody>
-    {% for formation in object_list %}
+  <thead>
     <tr>
-      <td>{{ formation.code }}</td>
-      <td>{{ formation.nom }}</td>
+      <th>Nom</th>
+      <th>Email</th>
+      <th>Département</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for enseignant in enseignants %}
+    <tr>
+      <td>{{ enseignant.id.prenom }} {{ enseignant.id.nom }}</td>
+      <td>{{ enseignant.id.email }}</td>
+      <td>{{ enseignant.departement.nom }}</td>
       <td>
-        <a href="{% url 'formation_update' formation.pk %}" class="btn btn-sm btn-warning">Modifier</a>
-        <a href="{% url 'formation_delete' formation.pk %}" class="btn btn-sm btn-danger">Supprimer</a>
+        <a href="{% url 'enseignant_update' enseignant.pk %}" class="btn btn-sm btn-warning">Modifier</a>
+        <a href="{% url 'enseignant_delete' enseignant.pk %}" class="btn btn-sm btn-danger">Supprimer</a>
       </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="4" class="text-center text-muted">Aucun enseignant n'a été créé.</td>
     </tr>
     {% endfor %}
   </tbody>

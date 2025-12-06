@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Formations{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Gestion des Formations</h1>
+  <a href="{% url 'formation_create' %}" class="btn btn-primary">Ajouter une Formation</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Nom de la Formation</th>
+          <th scope="col">Département</th>
+          <th scope="col" class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for formation in formations %}
+        <tr>
+          <td>{{ formation.nom }}</td>
+          <td>{{ formation.departement.nom }}</td>
+          <td class="text-end">
+            <a href="{% url 'formation_update' formation.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+              Modifier
+            </a>
+            <a href="{% url 'formation_delete' formation.pk %}" class="btn btn-sm btn-outline-danger">
+              Supprimer
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="text-center text-muted py-3">
+            Aucune formation n'a été créée.
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">{% if form.instance.pk %}Modifier{% else %}Ajouter{% endif %} un Cours</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Nom du Cours</label>
+                    {{ form.nom }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Code</label>
+                    {{ form.code }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Enseignant Responsable</label>
+                    {{ form.enseignant }}
+                </div>
+
+                <hr class="my-4">
+                <h5 class="text-primary"><i class="bi bi-people"></i> Sélection des Étudiants</h5>
+                <p class="text-muted small">Utilisez les filtres ci-dessous pour sélectionner automatiquement la classe.</p>
+
+                <div class="row g-3 mb-3 p-3 bg-light rounded border">
+                    <div class="col-md-4">
+                        <label class="form-label">1. Type</label>
+                        {{ form.type_formation_filter }} </div>
+                    <div class="col-md-4">
+                        <label class="form-label">2. Niveau</label>
+                        <select name="niveau_filter" id="id_niveau_filter" class="form-select">
+                            <option value="">--- Choisir Type ---</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">3. Département</label>
+                        {{ form.departement_filter }}
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="button" id="btn-charger-etudiants" class="btn btn-warning btn-sm">
+                            <i class="bi bi-arrow-clockwise"></i> Charger les étudiants
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Étudiants Inscrits (Sélection multiple)</label>
+                    {{ form.etudiants }}
+                    <div class="form-text">Maintenez Ctrl (Windows) ou Cmd (Mac) pour sélectionner plusieurs étudiants manuellement.</div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <a href="{% url 'cours_list' %}" class="btn btn-secondary">Annuler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('id_type_formation_filter');
+    const niveauSelect = document.getElementById('id_niveau_filter');
+    const deptSelect = document.getElementById('id_departement_filter');
+    const btnCharger = document.getElementById('btn-charger-etudiants');
+    const etudiantsSelect = document.getElementById('id_etudiants');
+
+    // 1. Logique pour changer les niveaux (Licence vs Master)
+    const niveauxLicence = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+    const niveauxMaster = ['M1', 'M2', 'M3', 'M4'];
+
+    typeSelect.addEventListener('change', function() {
+        niveauSelect.innerHTML = '<option value="">--- Niveau ---</option>';
+        let choix = [];
+
+        if (this.value === 'licence') choix = niveauxLicence;
+        else if (this.value === 'master') choix = niveauxMaster;
+
+        choix.forEach(function(niv) {
+            const option = document.createElement('option');
+            option.value = niv;
+            option.textContent = niv;
+            niveauSelect.appendChild(option);
+        });
+    });
+
+    // 2. Fonction pour appeler l'API et sélectionner les étudiants
+    function chargerEtudiants() {
+        const type = typeSelect.value;
+        const niveau = niveauSelect.value;
+        const dept = deptSelect.value;
+
+        if(!type || !niveau || !dept) {
+            alert("Veuillez sélectionner le Type, le Niveau et le Département.");
+            return;
+        }
+
+        // Construire l'URL avec les paramètres
+        const url = `{% url 'api_get_etudiants_filter' %}?type_formation=${type}&niveau=${niveau}&departement=${dept}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Optionnel : Vider la sélection actuelle ?
+                // etudiantsSelect.selectedIndex = -1;
+
+                const idsASelectionner = data.etudiants.map(e => e.id.toString());
+                let count = 0;
+
+                // Parcourir toutes les options du select "etudiants"
+                for (let i = 0; i < etudiantsSelect.options.length; i++) {
+                    const option = etudiantsSelect.options[i];
+                    // Si l'ID de l'option est dans la liste reçue, on la sélectionne
+                    if (idsASelectionner.includes(option.value)) {
+                        option.selected = true;
+                        count++;
+                    } else {
+                        // Décommenter si vous voulez désélectionner ceux qui ne matchent pas
+                        // option.selected = false;
+                    }
+                }
+                alert(count + " étudiant(s) trouvé(s) et sélectionné(s) !");
+            })
+            .catch(err => console.error('Erreur:', err));
+    }
+
+    // Déclencher le chargement au clic ou au changement du dernier select
+    btnCharger.addEventListener('click', chargerEtudiants);
+    deptSelect.addEventListener('change', chargerEtudiants); // Auto-load optionnel
+});
+</script>
+{% endblock %}

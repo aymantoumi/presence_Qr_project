@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Helvetica, sans-serif; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        h1 { margin: 0; font-size: 24px; color: #2c3e50; }
+        h2 { margin: 5px 0; font-size: 18px; color: #7f8c8d; }
+        .info-box { margin-bottom: 20px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .status-present { color: #198754; font-weight: bold; }
+        .status-absent { color: #dc3545; }
+        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Feuille de Présence</h1>
+        <h2>{{ session.cours.nom }} ({{ session.cours.code }})</h2>
+    </div>
+
+    <div class="info-box">
+        <strong>Enseignant :</strong> {{ enseignant.id.nom|upper }} {{ enseignant.id.prenom }}<br>
+        <strong>Date :</strong> {{ session.date_debut|date:"d F Y" }}<br>
+        <strong>Heure :</strong> {{ session.date_debut|date:"H:i" }} -
+        {% if session.date_fin %}{{ session.date_fin|date:"H:i" }}{% else %}En cours{% endif %}<br>
+        <strong>Taux de présence :</strong> {{ total_presents }} / {{ total_inscrits }} étudiants
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Statut</th>
+                <th>Signature</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for etudiant in liste_etudiants %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ etudiant.nom|upper }}</td>
+                <td>{{ etudiant.prenom|title }}</td>
+                <td style="color: {{ etudiant.color }};">
+                    {{ etudiant.statut }}
+                </td>
+                <td>
+                    </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Généré automatiquement par le Système de Gestion de Présence le {% now "d/m/Y H:i" %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Statistiques - {{ cours.nom }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Statistiques : {{ cours.nom }}</h2>
+        <a href="{% url 'dashboard_enseignant' %}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Évolution de la présence par séance</h5>
+        </div>
+        <div class="card-body">
+            <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Détail par Étudiant</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Étudiant</th>
+                                <th class="text-center">Présences</th>
+                                <th class="text-center">Taux</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in etudiants_stats %}
+                            <tr>
+                                <td>{{ stat.etudiant.id.nom|upper }} {{ stat.etudiant.id.prenom }}</td>
+                                <td class="text-center">{{ stat.presences }} / {{ total_sessions }}</td>
+                                <td class="text-center fw-bold">{{ stat.taux }}%</td>
+                                <td>
+                                    {% if stat.taux >= 75 %}
+                                        <span class="badge bg-success">Assidu</span>
+                                    {% elif stat.taux >= 50 %}
+                                        <span class="badge bg-warning text-dark">Moyen</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Critique</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Historique des Sessions</h5>
+                </div>
+                <ul class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+    {% for session in sessions %}
+    <li class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ session.date_debut|date:"d/m/Y" }}</strong><br>
+                <small class="text-muted">
+                   {{ session.date_debut|date:"H:i" }} - {{ session.date_fin|date:"H:i"|default:"?" }}
+                </small>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary rounded-pill">
+                    {{ session.presence_set.count }} présents
+                </span>
+
+                <a href="{% url 'session_pdf' session.id %}" class="btn btn-sm btn-outline-danger" title="Télécharger la feuille de présence" target="_blank">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                </a>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('attendanceChart');
+
+    // Vérification de sécurité
+    if (!ctx) return;
+
+    // CORRECTION 3 : Gestion sécurisée des données vides
+    // On s'assure que Django envoie bien des listes valides
+    const rawLabels = {{ graph_dates|safe|default:"[]" }};
+    const rawData = {{ graph_counts|safe|default:"[]" }};
+
+    console.log("Données du graphe:", rawLabels, rawData); // Pour le débogage dans la console F12
+
+    new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: rawLabels,
+            datasets: [{
+                label: 'Étudiants Présents',
+                data: rawData,
+                borderColor: '#0d6efd', // Bleu Bootstrap
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                tension: 0.3, // Courbe arrondie
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // Important pour remplir la div hauteur 300px
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1, // Pas de nombres à virgule pour des humains
+                        precision: 0
+                    },
+                    suggestedMax: 10 // Pour ne pas avoir un graphe écrasé si peu de monde
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

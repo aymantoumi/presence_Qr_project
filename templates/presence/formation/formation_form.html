@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form_title|default:"Ajouter/Modifier une Formation" }}{% endblock %}
+
+{% block content %}
+<h1>{{ form_title|default:"Ajouter/Modifier une Formation" }}</h1>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+{% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>Attention, il y a des erreurs :</strong>
+        <ul>
+        {% for field, errors in form.errors.items %}
+            <li><strong>{{ field|title }} :</strong> {{ errors.0 }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+      <div class="mb-3">
+        <label for="id_nom" class="form-label">{{ form.nom.label }}</label>
+        {{ form.nom }}
+        <small class="form-text text-muted">{{ form.nom.help_text }}</small>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_type_formation" class="form-label">{{ form.type_formation.label }}</label>
+        {{ form.type_formation }}
+      </div>
+
+      <div class="mb-3">
+        <label for="id_niveau" class="form-label">{{ form.niveau.label }}</label>
+        {{ form.niveau }}
+      </div>
+
+      <div class="mb-3">
+        <label for="id_departement" class="form-label">{{ form.departement.label }}</label>
+        {{ form.departement }}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="{% url 'formation_list' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('id_type_formation');
+    const niveauSelect = document.getElementById('id_niveau');
+
+    // On stocke les choix de niveaux passés par la vue
+    const niveaux = {
+        'licence': [
+            {% for k, v in niveaux_licence %}
+            { 'id': '{{ k }}', 'name': '{{ v }}' },
+            {% endfor %}
+        ],
+        'master': [
+            {% for k, v in niveaux_master %}
+            { 'id': '{{ k }}', 'name': '{{ v }}' },
+            {% endfor %}
+        ]
+    };
+
+    // On garde en mémoire la valeur de base (pour la modification)
+    const originalNiveau = '{{ form.niveau.value|default:"" }}';
+
+    function updateNiveauOptions() {
+        const selectedType = typeSelect.value;
+        const options = niveaux[selectedType] || [];
+
+        niveauSelect.innerHTML = ''; // Vide la liste
+
+        let defaultOption = new Option('---------', '');
+        niveauSelect.appendChild(defaultOption);
+
+        options.forEach(function(opt) {
+            let option = new Option(opt.name, opt.id);
+            // Resélectionne l'ancienne valeur si elle correspond
+            if (opt.id === originalNiveau) {
+                option.selected = true;
+            }
+            niveauSelect.appendChild(option);
+        });
+    }
+
+    // On écoute le changement sur le type
+    typeSelect.addEventListener('change', updateNiveauOptions);
+
+    // On lance la fonction une fois au chargement
+    updateNiveauOptions();
+});
+</script>
+{% endblock %}

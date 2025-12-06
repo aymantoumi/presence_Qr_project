@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Panneau Administrateur{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Panneau Administrateur</h1>
+
+<ul class="nav nav-tabs" id="adminTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="cours-tab" data-bs-toggle="tab" data-bs-target="#cours-panel" type="button" role="tab">Gérer les Cours</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="enseignant-tab" data-bs-toggle="tab" data-bs-target="#enseignant-panel" type="button" role="tab">Ajouter un Enseignant</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="departement-tab" data-bs-toggle="tab" data-bs-target="#departement-panel" type="button" role="tab">Gérer les Départements</button>
+  </li>
+</ul>
+
+<div class="tab-content" id="adminTabsContent">
+
+  <div class="tab-pane fade show active p-4 bg-white border border-top-0 rounded-bottom" id="cours-panel" role="tabpanel">
+    <h3 class="mb-3">Créer / Associer un Cours</h3>
+    <form action="{% url 'creer_cours' %}" method="POST">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="cours_nom" class="form-label">Nom du Cours</label>
+          <input type="text" class="form-control" id="cours_nom" name="cours_nom" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="cours_code" class="form-label">Code du Cours</label>
+          <input type="text" class="form-control" id="cours_code" name="cours_code" required>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="cours_semestre" class="form-label">Semestre Cible</label>
+          <select class="form-select" id="cours_semestre" name="cours_semestre">
+            {% for code, nom in semestre_choices %}
+              <option value="{{ code }}">{{ nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="cours_enseignant" class="form-label">Associer à l'enseignant :</label>
+          <select class="form-select" id="cours_enseignant" name="cours_enseignant">
+            {% for prof in enseignants %}
+              <option value="{{ prof.id_id }}">{{ prof.id.prenom }} {{ prof.id.nom }}</option>
+            {% empty %}
+              <option value="" disabled>Aucun enseignant créé</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mb-3">
+          <label for="cours_etudiants" class="form-label">Inscrire les étudiants :</label>
+          <select class="form-select" id="cours_etudiants" name="cours_etudiants" multiple size="8">
+            {% for etu in etudiants %}
+              <option value="{{ etu.id_id }}">{{ etu.id.prenom }} {{ etu.id.nom }} ({{ etu.semestre }})</option>
+            {% empty %}
+              <option value="" disabled>Aucun étudiant créé</option>
+            {% endfor %}
+          </select>
+          <small class="form-text text-muted">Maintenez Ctrl (ou Cmd sur Mac) pour en sélectionner plusieurs.</small>
+      </div>
+      <button type="submit" class="btn btn-primary">Enregistrer le Cours</button>
+    </form>
+  </div>
+
+  <div class="tab-pane fade p-4 bg-white border border-top-0 rounded-bottom" id="enseignant-panel" role="tabpanel">
+    <h3 class="mb-3">Ajouter un nouvel enseignant</h3>
+    <form action="{% url 'creer_enseignant' %}" method="POST">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="ens_prenom" class="form-label">Prénom</label>
+          <input type="text" class="form-control" id="ens_prenom" name="ens_prenom" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="ens_nom" class="form-label">Nom</label>
+          <input type="text" class="form-control" id="ens_nom" name="ens_nom" required>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="ens_email" class="form-label">Email (sera son identifiant)</label>
+        <input type="email" class="form-control" id="ens_email" name="ens_email" required>
+      </div>
+      <div class="mb-3">
+        <label for="ens_departement" class="form-label">Département</label>
+        <select class="form-select" id="ens_departement" name="ens_departement">
+          <option value="">--- Choisir ---</option>
+          {% for dept in departements %}
+            <option value="{{ dept.code }}">{{ dept.nom }}</option>
+          {% empty %}
+             <option value="" disabled>Aucun département créé (voir onglet "Gérer les Départements")</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="ens_password" class="form-label">Mot de passe provisoire</label>
+        <input type="password" class="form-control" id="ens_password" name="ens_password" required>
+      </div>
+      <button type="submit" class="btn btn-success">Créer le compte Enseignant</button>
+    </form>
+  </div>
+
+  <div class="tab-pane fade p-4 bg-white border border-top-0 rounded-bottom" id="departement-panel" role="tabpanel">
+    <div class="row">
+        <div class="col-md-6">
+            <h3 class="mb-3">Ajouter un département</h3>
+            <form action="{% url 'creer_departement' %}" method="POST">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="dept_code" class="form-label">Code Département</label>
+                <input type="text" class="form-control" id="dept_code" name="dept_code" placeholder="Ex: INFO" required>
+              </div>
+              <div class="mb-3">
+                <label for="dept_nom" class="form-label">Nom complet</label>
+                <input type="text" class="form-control" id="dept_nom" name="dept_nom" placeholder="Ex: Informatique" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Enregistrer le Département</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <h3 class="mb-3">Départements existants</h3>
+            <ul class="list-group">
+                {% for dept in departements %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ dept.nom }}
+                      <span class="badge bg-secondary rounded-pill">{{ dept.code }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Aucun département créé pour le moment.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

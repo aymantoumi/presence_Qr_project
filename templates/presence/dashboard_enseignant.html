@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord Enseignant{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Tableau de Bord Enseignant</h1>
+
+<div class="card shadow-sm">
+  <div class="card-header">
+    <h3>Mes Cours</h3>
+  </div>
+  <div class="card-body">
+    <p>Cliquez sur un cours pour lancer une nouvelle session de présence.</p>
+
+    {% if cours_list %}
+      <div class="list-group">
+        {# Le bouton doit être DANS la boucle #}
+        {% for cours in cours_list %}
+         <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+
+    <div>
+        <strong class="fs-5">{{ cours.nom }}</strong>
+        <small class="text-muted d-block">{{ cours.code }}</small>
+
+        {% if cours.session_en_cours %}
+            <span class="badge bg-success mt-1 animate-pulse">Session en cours...</span>
+        {% endif %}
+    </div>
+
+    <div>
+        {% if cours.session_en_cours %}
+            <a href="{% url 'session_detail' cours.session_en_cours.id %}" class="btn btn-warning text-dark fw-bold">
+                <i class="bi bi-play-circle"></i> Reprendre la session
+            </a>
+        {% else %}
+            <a href="{% url 'lancer_session' cours.id %}" class="btn btn-primary">
+                Lancer une session
+            </a>
+        {% endif %}
+
+        <a href="{% url 'cours_stats' cours.id %}" class="btn btn-sm btn-info text-white ms-2">
+            Stats
+        </a>
+    </div>
+
+</div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted">Vous n'avez aucun cours assigné.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ form_title|default:"Ajouter/Modifier un Étudiant" }}{% endblock %}
+
+{% block content %}
+<h1>{{ form_title|default:"Ajouter/Modifier un Étudiant" }}</h1>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      {# --- GESTION DES ERREURS GLOBALES --- #}
+      {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Erreur :</strong>
+            <ul class="mb-0">
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+      {% endif %}
+
+      {% if form.errors %}
+          <div class="alert alert-warning">
+            <small>Veuillez corriger les erreurs ci-dessous.</small>
+          </div>
+      {% endif %}
+
+      {# --- CHAMPS UTILISATEUR (Nom, Prénom, Email, MDP) --- #}
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="id_nom" class="form-label">{{ form.nom.label }}</label>
+          {{ form.nom }} {% if form.nom.errors %}
+             <div class="text-danger small">{{ form.nom.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="id_prenom" class="form-label">{{ form.prenom.label }}</label>
+          {{ form.prenom }}
+          {% if form.prenom.errors %}
+             <div class="text-danger small">{{ form.prenom.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_email" class="form-label">{{ form.email.label }}</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+           <div class="text-danger small">{{ form.email.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      {% if form.password %}
+      <div class="mb-3">
+        <label for="id_password" class="form-label">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+           <div class="text-danger small">{{ form.password.errors.0 }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <hr>
+
+      {# --- SECTION FILTRES (Formation & Cours) --- #}
+      <h4 class="mt-4 mb-3">Assignation Académique</h4>
+      <p class="text-muted">Sélectionnez le Type, le Niveau et le Département pour charger la Formation et les Cours.</p>
+
+      <div class="row p-3 bg-light rounded border mb-3">
+        <div class="col-md-4 mb-3">
+          <label for="id_type_formation" class="form-label fw-bold">{{ form.type_formation.label }}</label>
+          {{ form.type_formation }}
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="id_niveau" class="form-label fw-bold">{{ form.niveau.label }}</label>
+          {{ form.niveau }}
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="id_departement" class="form-label fw-bold">{{ form.departement.label }}</label>
+          {{ form.departement }}
+        </div>
+      </div>
+
+      {# --- RÉSULTAT 1 : LA FORMATION --- #}
+      <div class="mb-3">
+        <label for="id_formation" class="form-label fw-bold text-primary">
+            <i class="bi bi-mortarboard-fill"></i> {{ form.formation.label }}
+        </label>
+        {{ form.formation }}
+        {% if form.formation.errors %}
+          <div class="text-danger small">{{ form.formation.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      {# --- RÉSULTAT 2 : LES COURS (NOUVEAU) --- #}
+      <div class="mb-4">
+        <label for="id_cours" class="form-label fw-bold text-success">
+            <i class="bi bi-book-fill"></i> {{ form.cours.label }}
+        </label>
+        <p class="text-muted small mb-1">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs cours.</p>
+
+        {{ form.cours }}
+
+        {% if form.cours.errors %}
+          <div class="text-danger small">{{ form.cours.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+          <a href="{% url 'etudiant_list' %}" class="btn btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Configuration des URLs pour les scripts externes et internes
+    window.DJANGO_DATA = {
+        urlNiveaux: '{% url "api_get_niveaux" %}',
+        urlFormations: '{% url "api_get_formations" %}',
+        // Ajouter l'URL pour les cours
+        urlCours: '{% url "api_get_cours_filter" %}',
+        initialNiveau: '{{ form.niveau.value|default:"" }}',
+        initialFormationId: '{{ form.formation.value|default:"" }}'
+    };
+</script>
+
+<script src="{% static 'js/etudiant_form.js' %}" defer></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const niveauSelect = document.getElementById('id_niveau');
+    const deptSelect = document.getElementById('id_departement');
+    const coursSelect = document.getElementById('id_cours');
+
+    // Fonction pour charger les cours via l'API
+    function updateCours() {
+        const niveau = niveauSelect.value;
+        const dept = deptSelect.value;
+
+        // On vide la liste actuelle
+        coursSelect.innerHTML = '';
+
+        // Si pas de niveau ou pas de département, on ne cherche rien
+        if (!niveau) {
+            const option = document.createElement('option');
+            option.text = "--- Sélectionnez un niveau d'abord ---";
+            coursSelect.add(option);
+            return;
+        }
+
+        // Appel AJAX vers la vue api_get_cours_par_filtres
+        const url = `${window.DJANGO_DATA.urlCours}?niveau=${niveau}&departement=${dept || ''}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.cours.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = "Aucun cours disponible pour ce niveau/département";
+                    coursSelect.add(option);
+                } else {
+                    data.cours.forEach(c => {
+                        const option = document.createElement('option');
+                        option.value = c.id;
+                        option.text = c.nom;
+                        // Optionnel : pré-sélectionner tous les cours ?
+                        // option.selected = true;
+                        coursSelect.add(option);
+                    });
+                }
+            })
+            .catch(err => console.error("Erreur chargement cours:", err));
+    }
+
+    // Écouter les changements sur Niveau et Département
+    // Note: Le script 'etudiant_form.js' gère déjà le changement de 'Type' qui met à jour 'Niveau'
+    // Donc on écoute surtout 'niveau' et 'departement'.
+    if (niveauSelect) niveauSelect.addEventListener('change', updateCours);
+    if (deptSelect) deptSelect.addEventListener('change', updateCours);
+
+    // Déclenchement initial si on est en mode édition
+    if (niveauSelect && niveauSelect.value) {
+        // Petit délai pour laisser le temps aux autres scripts de s'initialiser si besoin
+        setTimeout(updateCours, 500);
+    }
+});
+</script>
+{% endblock %}

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Ajouter/Modifier un Enseignant{% endblock %}
+{% block title %}Ajouter/Modifier Département{% endblock %}
 {% block content %}
-<h1>Ajouter/Modifier un Enseignant</h1>
+<h1>Ajouter/Modifier un Département</h1>
 <div class="card shadow-sm"><div class="card-body">
 <form method="POST">
   {% csrf_token %}
   {{ form.as_p }}
   <button type="submit" class="btn btn-primary">Enregistrer</button>
-  <a href="{% url 'enseignant_list' %}" class="btn btn-secondary">Annuler</a>
+  <a href="{% url 'departement_list' %}" class="btn btn-secondary">Annuler</a>
 </form>
 </div></div>
 {% endblock %}

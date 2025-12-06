@@ -1,0 +1,10 @@
+/* Force la couleur blanche pour les éléments à l'intérieur d'un item actif */
+.list-group-item.active h6,
+.list-group-item.active .text-primary {
+    color: #ffffff !important;
+}
+
+.list-group-item.active small,
+.list-group-item.active .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important; /* Blanc légèrement transparent pour les infos secondaires */
+}
