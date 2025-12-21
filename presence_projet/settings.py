@@ -18,10 +18,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Les applications tierces
+    'corsheaders',
     'rest_framework',
     'drf_yasg',
-    
-    # Nos applications
+
+    # Vos applications
     'comptes.apps.ComptesConfig',
     'presence.apps.PresenceConfig',
 ]
@@ -34,6 +37,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
 
 ROOT_URLCONF = 'presence_projet.urls'
@@ -65,10 +69,15 @@ DATABASES = {
         'NAME': 'presence_db',      # Nom de votre DB
         'USER': 'postgres', # Votre utilisateur DB
         'PASSWORD': '1234',
-        'HOST': 'localhost',             
-        'PORT': '5432',                  
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': '5432',
     }
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+
+]
 
 # Internationalisation
 LANGUAGE_CODE = 'fr-fr'

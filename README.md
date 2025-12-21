@@ -144,4 +144,4 @@ python manage.py createsuperuser
 
 🖼️ Les images ou CSS ne se chargent pas (404)
 
-Vérifiez que le dossier static/ existe à la racine.
+Vérifiez que le dossier static/ existe à la racine.pg_dump -U [VOTRE_UTILISATEUR_POSTGRES] presence_db > init.sql

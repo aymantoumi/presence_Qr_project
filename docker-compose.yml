@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # --- Service Base de Données ---
+  db:
+    image: postgres:15
+    container_name: presence_db_container
+    environment:
+      - POSTGRES_DB=presence_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+    volumes:
+      # C'est ici que vos données (init.sql) seront chargées automatiquement
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persistance des données (pour ne pas les perdre au redémarrage)
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- Service Application Django ---
+  web:
+    build: .
+    container_name: presence_web_container
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      # On dit à Django que la base de données est sur le service 'db'
+      - DB_HOST=db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
