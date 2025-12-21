@@ -1,0 +1,35 @@
+# --- Django / Python ---
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+db.sqlite3
+*.log
+
+# Environnements virtuels (D'après vos images, vous utilisez .venv)
+.venv/
+venv/
+env/
+ENV/
+
+
+
+
+
+# Fichiers d'environnement (Contiennent des secrets !)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- IDE (PyCharm, WebStorm, VS Code) ---
+# D'après vos images, vous avez des dossiers .idea
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Système d'exploitation ---
+.DS_Store
+Thumbs.db
