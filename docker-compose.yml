@@ -3,32 +3,38 @@ version: '3.8'
 services:
   # --- Service Base de Données ---
   db:
-    image: postgres:15
+    image: postgres:18
     container_name: presence_db_container
+    env_file:
+      - .env
     environment:
-      - POSTGRES_DB=presence_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=${DB_NAME:-presence_db}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-1234}
     volumes:
-      # C'est ici que vos données (init.sql) seront chargées automatiquement
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      # Persistance des données (pour ne pas les perdre au redémarrage)
-      - postgres_data:/var/lib/postgresql/data
+      # Removed init.sql reliance for secure seeding
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # --- Service Application Django ---
   web:
     build: .
     container_name: presence_web_container
-    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
+    # Wait for DB -> Migrate -> Seed -> Start Server
+    command: sh -c "python manage.py migrate && python manage.py seed_security && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      # On dit à Django que la base de données est sur le service 'db'
-      - DB_HOST=db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:

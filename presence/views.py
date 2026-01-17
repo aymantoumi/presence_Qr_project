@@ -17,8 +17,9 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -34,8 +35,9 @@ from .serializers import (
     DepartementSerializer, FormationSerializer, EnseignantSerializer,
     EtudiantSerializer, CoursSerializer, SessionCoursSerializer, PresenceSerializer
 )
+from .permissions import IsEnseignant, IsEtudiant, IsAdmin
 
-# --- Helpers de rôle ---
+# --- Helpers de rôle (Deprecated for API, kept for Template Views) ---
 def est_enseignant(user):
     return user.is_authenticated and hasattr(user, 'enseignant')
 
@@ -104,12 +106,9 @@ def session_detail(request, session_id):
     responses={200: openapi.Response("QR Code Base64", examples={"application/json": {"qr_image_base64": "..."}})}
 )
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsEnseignant])
 def rafraichir_qr(request, session_id):
-    # Note: On utilise request.user directement car @api_view gère l'auth
-    if not hasattr(request.user, 'enseignant'):
-        return JsonResponse({'error': 'Accès refusé'}, status=403)
-
+    # Utilisation de la permission IsEnseignant
     profil_enseignant = request.user.enseignant
     session = get_object_or_404(SessionCours, id=session_id, enseignant=profil_enseignant)
     if not session.actif:
@@ -131,18 +130,14 @@ def rafraichir_qr(request, session_id):
     responses={200: "Liste JSON des présences"}
 )
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsEnseignant | IsAdmin])
 def get_presences_api(request, session_id):
-
-
     session = get_object_or_404(SessionCours, id=session_id)
 
-    # Vérification manuelle car @user_passes_test est complexe avec @api_view
-    if request.user.role == 'admin' or (
-            hasattr(request.user, 'enseignant') and request.user.enseignant == session.enseignant):
-        pass
-    else:
-        return HttpResponseForbidden("Vous n'êtes pas le propriétaire de cette session.")
+    # Check ownership if not admin
+    if not request.user.role == 'admin':
+        if session.enseignant != request.user.enseignant:
+             return HttpResponseForbidden("Vous n'êtes pas le propriétaire de cette session.")
 
     presences = Presence.objects.filter(session=session).order_by('horodatage_scan')
     presences_data = []
@@ -247,17 +242,14 @@ def scanner_etudiant(request):
     }
 )
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@authentication_classes([JWTAuthentication]) # Enforce JWT only
+@permission_classes([IsEtudiant]) # Enforce Student Role
 def valider_scan(request):
     """
     Validation du scan QR code par un étudiant.
     """
     # Avec @api_view, request.data contient les données POST (JSON ou Form)
-    print("--- REQUETE DE SCAN RECUE ---")
-
-    # Vérifier que l'utilisateur est un étudiant
-    if not hasattr(request.user, 'etudiant'):
-        return JsonResponse({'success': False, 'message': 'Accès réservé aux étudiants.'}, status=403)
+    # Plus besoin de vérifier request.user.etudiant manuellement grâce à IsEtudiant
 
     jeton_scanne = request.data.get('jeton')
 
@@ -807,9 +799,11 @@ def api_get_formations(request):
     responses={200: "Liste des étudiants filtrés"}
 )
 @api_view(['GET'])
+@permission_classes([IsAdmin | IsEnseignant]) # Security: Students must not see other students list
 def api_get_etudiants_par_formation(request):
     """
     Renvoie les étudiants filtrés par Type, Niveau et Département.
+    Restricted to Admins and Teachers.
     """
     type_form = request.GET.get('type_formation')
     niveau = request.GET.get('niveau')
@@ -972,34 +966,40 @@ class DepartementViewSet(viewsets.ModelViewSet):
     """ API Admin : Gérer les départements """
     queryset = Departement.objects.all()
     serializer_class = DepartementSerializer
-    # permission_classes = [permissions.IsAdminUser] # Décommentez pour sécuriser
+    permission_classes = [IsAdmin] # Security: Only Admins can modify departments
 
 class FormationViewSet(viewsets.ModelViewSet):
     """ API Admin : Gérer les formations """
     queryset = Formation.objects.all()
     serializer_class = FormationSerializer
+    permission_classes = [IsAdmin] # Security: Only Admins can modify formations
 
 class EnseignantViewSet(viewsets.ModelViewSet):
     """ API Admin : Gérer les enseignants """
     queryset = Enseignant.objects.all()
     serializer_class = EnseignantSerializer
+    permission_classes = [IsAdmin] # Security: Only Admins can manage teachers
 
 class EtudiantViewSet(viewsets.ModelViewSet):
     """ API Admin : Gérer les étudiants """
     queryset = Etudiant.objects.all()
     serializer_class = EtudiantSerializer
+    permission_classes = [IsAdmin] # Security: Only Admins can manage students
 
 class CoursViewSet(viewsets.ModelViewSet):
     """ API Admin/Enseignant : Gérer les cours """
     queryset = Cours.objects.all()
     serializer_class = CoursSerializer
+    permission_classes = [IsAdmin] # Security: Admins manage course structure
 
 class SessionCoursViewSet(viewsets.ModelViewSet):
     """ API Enseignant : Gérer les sessions """
     queryset = SessionCours.objects.all()
     serializer_class = SessionCoursSerializer
+    permission_classes = [IsAdmin] # Security: Legacy API, Admins only. Teachers use custom endpoints.
 
 class PresenceViewSet(viewsets.ModelViewSet):
     """ API : Voir les présences """
     queryset = Presence.objects.all()
     serializer_class = PresenceSerializer
+    permission_classes = [IsAdmin] # Security: Admins only. Real-time presence is handled via custom endpoints.

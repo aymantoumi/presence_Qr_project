@@ -4,8 +4,12 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
 from .forms import CustomUserCreationForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 
+def is_admin(user):
+    return user.is_authenticated and user.role == 'admin'
+
+@user_passes_test(is_admin, login_url='/comptes/login/')
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)

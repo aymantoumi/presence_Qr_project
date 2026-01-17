@@ -5,6 +5,10 @@ from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 # --- AJOUT IMPORTANT : Importez les vues de l'application comptes ---
 from comptes import views as comptes_views
@@ -39,6 +43,10 @@ urlpatterns = [
     # Redirection Dashboard (C'est celle qui causait l'erreur)
     path('dashboard/', comptes_views.dashboard_redirect_view, name='dashboard_redirect'),
     # -----------------------------------------------
+
+    # --- API TOKEN AUTHENTICATION (JWT) ---
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # --- URLs SWAGGER ---
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),

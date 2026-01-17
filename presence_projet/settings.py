@@ -1,14 +1,20 @@
 import os
 from pathlib import Path
+from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Changez ceci en production !
-SECRET_KEY = 'django-insecure-@votre-cle-secrete-ici'
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1 [::1]').split(' ')
 
 # Applications
 INSTALLED_APPS = [
@@ -19,12 +25,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Les applications tierces
+    # Third party apps
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt',
     'drf_yasg',
 
-    # Vos applications
+    # Local apps
     'comptes.apps.ComptesConfig',
     'presence.apps.PresenceConfig',
 ]
@@ -42,11 +49,28 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'presence_projet.urls'
 
-# Configuration des Templates
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # Fallback for Browsable API/Admin
+    ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+# Templates Configuration
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Pointeur vers le dossier global
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -61,44 +85,41 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'presence_projet.wsgi.application'
 
-# Configuration de la base de données PostgreSQL
-# Assurez-vous d'avoir créé cette base de données et cet utilisateur dans PostgreSQL
+# Database Configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'presence_db',      # Nom de votre DB
-        'USER': 'postgres', # Votre utilisateur DB
-        'PASSWORD': '1234',
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'presence_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-
 ]
 
-# Internationalisation
+# Internationalization
 LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'Europe/Paris'
 USE_I18N = True
 USE_TZ = True
 
-# Fichiers statiques (CSS, JS, Images)
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Modèle utilisateur personnalisé
+# Custom User Model
 AUTH_USER_MODEL = 'comptes.Utilisateur'
 
-# URL de redirection après connexion/déconnexion
-LOGIN_REDIRECT_URL = 'dashboard_redirect' # Vue de redirection
+# Redirect URLs
+LOGIN_REDIRECT_URL = 'dashboard_redirect'
 LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'home'
